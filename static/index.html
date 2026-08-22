@@ -91,7 +91,7 @@ if(!r.ok){
 throw Error(
 typeof d.detail==='string'
 ? d.detail
-: 'Request failed'
+: JSON.stringify(d.detail||d)
 );
 }
 
