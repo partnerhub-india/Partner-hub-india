@@ -12,7 +12,6 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 
-
 DB = "data/partnerhub.db"
 os.makedirs("data", exist_ok=True)
 
@@ -31,12 +30,14 @@ def db():
 
 def hash_password(password: str) -> str:
     salt = secrets.token_bytes(16)
+
     hashed = hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
         salt,
         310000
     )
+
     return "pbkdf2$" + salt.hex() + "$" + hashed.hex()
 
 
@@ -229,8 +230,8 @@ def current_user(
 ):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
-            status_code=401,
-            detail="Login required"
+            401,
+            "Login required"
         )
 
     try:
@@ -244,8 +245,8 @@ def current_user(
 
     except Exception:
         raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired token"
+            401,
+            "Invalid or expired token"
         )
 
     c = db()
@@ -262,8 +263,8 @@ def current_user(
 
     if not user:
         raise HTTPException(
-            status_code=401,
-            detail="User unavailable"
+            401,
+            "User unavailable"
         )
 
     return dict(user)
@@ -427,6 +428,7 @@ def update_profile(
     data: Profile,
     user=Depends(current_user)
 ):
+
     values = {
         key: value
         for key, value in data.model_dump().items()
@@ -444,11 +446,7 @@ def update_profile(
     )
 
     c.execute(
-        f"""
-        UPDATE users
-        SET {sets}
-        WHERE id=?
-        """,
+        f"UPDATE users SET {sets} WHERE id=?",
         [
             *values.values(),
             user["id"]
@@ -463,372 +461,4 @@ def update_profile(
 
 @app.post("/api/businesses")
 def create_business(
-    data: BusinessIn,
-    user=Depends(current_user)
-):
-    if user["role"] not in ("owner", "admin"):
-        raise HTTPException(
-            403,
-            "Business Owner account required"
-        )
-
-    c = db()
-
-    cur = c.execute(
-        """
-        INSERT INTO businesses
-        (
-            owner_id,name,category,city,
-            investment_required,partner_investment,
-            partnership_pct,profit_share,
-            description,created_at
-        )
-        VALUES(?,?,?,?,?,?,?,?,?,?)
-        """,
-        (
-            user["id"],
-            data.name,
-            data.category,
-            data.city,
-            data.investment_required,
-            data.partner_investment,
-            data.partnership_pct,
-            data.profit_share,
-            data.description,
-            datetime.utcnow().isoformat()
-        )
-    )
-
-    business_id = cur.lastrowid
-
-    c.commit()
-    c.close()
-
-    return {
-        "business_id": business_id,
-        "ok": True
-    }
-
-
-@app.get("/api/businesses")
-def businesses(
-    q: str = "",
-    city: str = "",
-    user=Depends(current_user)
-):
-    c = db()
-
-    rows = c.execute(
-        """
-        SELECT * FROM businesses
-        WHERE status='active'
-        AND name LIKE ?
-        AND city LIKE ?
-        ORDER BY id DESC
-        """,
-        (
-            "%" + q + "%",
-            "%" + city + "%"
-        )
-    ).fetchall()
-
-    c.close()
-
-    result = []
-
-    for row in rows:
-        item = dict(row)
-        item["match_score"] = match_score(
-            user,
-            item
-        )
-        result.append(item)
-
-    return result
-
-
-@app.post("/api/interests")
-def add_interest(
-    data: InterestIn,
-    user=Depends(current_user)
-):
-    c = db()
-
-    business = c.execute(
-        """
-        SELECT * FROM businesses
-        WHERE id=?
-        """,
-        (data.business_id,)
-    ).fetchone()
-
-    if not business:
-        c.close()
-        raise HTTPException(
-            404,
-            "Business not found"
-        )
-
-    try:
-        c.execute(
-            """
-            INSERT INTO interests
-            (user_id,business_id,created_at)
-            VALUES(?,?,?)
-            """,
-            (
-                user["id"],
-                data.business_id,
-                datetime.utcnow().isoformat()
-            )
-        )
-    except sqlite3.IntegrityError:
-        c.execute(
-            """
-            UPDATE interests
-            SET status='pending'
-            WHERE user_id=? AND business_id=?
-            """,
-            (
-                user["id"],
-                data.business_id
-            )
-        )
-
-    c.execute(
-        """
-        INSERT INTO notifications
-        (user_id,text,created_at)
-        VALUES(?,?,?)
-        """,
-        (
-            business["owner_id"],
-            f"{user['name']} is interested in your business: {business['name']}",
-            datetime.utcnow().isoformat()
-        )
-    )
-
-    c.commit()
-    c.close()
-
-    return {"ok": True}
-
-
-@app.get("/api/matches")
-def matches(user=Depends(current_user)):
-
-    c = db()
-
-    rows = c.execute(
-        """
-        SELECT
-            i.*,
-            b.name,
-            b.category,
-            b.city,
-            b.partner_investment,
-            b.partnership_pct,
-            b.owner_id
-        FROM interests i
-        JOIN businesses b
-        ON b.id=i.business_id
-        WHERE i.user_id=?
-        ORDER BY i.id DESC
-        """,
-        (user["id"],)
-    ).fetchall()
-
-    c.close()
-
-    return [
-        dict(row)
-        for row in rows
-    ]
-
-
-@app.post("/api/messages")
-def send_message(
-    data: MessageIn,
-    user=Depends(current_user)
-):
-    if not data.body.strip():
-        raise HTTPException(
-            400,
-            "Empty message"
-        )
-
-    c = db()
-
-    receiver = c.execute(
-        """
-        SELECT id FROM users
-        WHERE id=? AND blocked=0
-        """,
-        (data.receiver_id,)
-    ).fetchone()
-
-    if not receiver:
-        c.close()
-        raise HTTPException(
-            404,
-            "User not found"
-        )
-
-    c.execute(
-        """
-        INSERT INTO messages
-        (sender_id,receiver_id,body,created_at)
-        VALUES(?,?,?,?)
-        """,
-        (
-            user["id"],
-            data.receiver_id,
-            data.body,
-            datetime.utcnow().isoformat()
-        )
-    )
-
-    c.execute(
-        """
-        INSERT INTO notifications
-        (user_id,text,created_at)
-        VALUES(?,?,?)
-        """,
-        (
-            data.receiver_id,
-            f"New message from {user['name']}",
-            datetime.utcnow().isoformat()
-        )
-    )
-
-    c.commit()
-    c.close()
-
-    return {"ok": True}
-
-
-@app.get("/api/messages/{other_id}")
-def get_messages(
-    other_id: int,
-    user=Depends(current_user)
-):
-    c = db()
-
-    rows = c.execute(
-        """
-        SELECT * FROM messages
-        WHERE
-        (sender_id=? AND receiver_id=?)
-        OR
-        (sender_id=? AND receiver_id=?)
-        ORDER BY id
-        """,
-        (
-            user["id"],
-            other_id,
-            other_id,
-            user["id"]
-        )
-    ).fetchall()
-
-    c.close()
-
-    return [
-        dict(row)
-        for row in rows
-    ]
-
-
-@app.get("/api/notifications")
-def notifications(
-    user=Depends(current_user)
-):
-    c = db()
-
-    rows = c.execute(
-        """
-        SELECT * FROM notifications
-        WHERE user_id=?
-        ORDER BY id DESC
-        LIMIT 50
-        """,
-        (user["id"],)
-    ).fetchall()
-
-    c.close()
-
-    return [
-        dict(row)
-        for row in rows
-    ]
-
-
-@app.post("/api/reports")
-def report(
-    data: ReportIn,
-    user=Depends(current_user)
-):
-    c = db()
-
-    c.execute(
-        """
-        INSERT INTO reports
-        (
-            reporter_id,
-            reported_user_id,
-            reason,
-            created_at
-        )
-        VALUES(?,?,?,?)
-        """,
-        (
-            user["id"],
-            data.reported_user_id,
-            data.reason,
-            datetime.utcnow().isoformat()
-        )
-    )
-
-    c.commit()
-    c.close()
-
-    return {"ok": True}
-
-
-@app.get("/api/admin/stats")
-def admin_stats(
-    user=Depends(current_user)
-):
-    if user["role"] != "admin":
-        raise HTTPException(
-            403,
-            "Admin only"
-        )
-
-    c = db()
-
-    result = {
-        "users": c.execute(
-            "SELECT COUNT(*) n FROM users"
-        ).fetchone()["n"],
-
-        "businesses": c.execute(
-            "SELECT COUNT(*) n FROM businesses"
-        ).fetchone()["n"],
-
-        "matches": c.execute(
-            "SELECT COUNT(*) n FROM interests"
-        ).fetchone()["n"],
-
-        "reports": c.execute(
-            """
-            SELECT COUNT(*) n
-            FROM reports
-            WHERE status='open'
-            """
-        ).fetchone()["n"]
-    }
-
-    c.close()
-
-    return result
+    data
