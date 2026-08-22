@@ -91,7 +91,8 @@ def home(): return FileResponse("static/index.html")
 
 @app.post("/api/register")
 def register(x:Register):
-    if len(x.password)<8: raise HTTPException(400,"Password must be at least 8 characters")
+ if len(x.password)<8: raise HTTPException(400,"Password must be at least 8 characters")
+if len(x.password.encode("utf-8"))>72: raise HTTPException(400,"Password must be 72 bytes or less")   
     if x.role not in ("partner","owner"): raise HTTPException(400,"Invalid role")
     c=db()
     try:
