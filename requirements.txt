@@ -4,3 +4,4 @@ python-multipart==0.0.20
 passlib[bcrypt]==1.7.4
 PyJWT==2.10.1
 pydantic[email]==2.11.7
+bcrypt==4.0.1
