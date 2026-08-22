@@ -1,0 +1,9 @@
+services:
+  partnerhub:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: "CHANGE_THIS_IN_PRODUCTION"
+    volumes:
+      - ./data:/app/data
