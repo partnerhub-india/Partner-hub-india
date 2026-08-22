@@ -91,18 +91,19 @@ def home(): return FileResponse("static/index.html")
 
 @app.post("/api/register")
 def register(x:Register):
- if len(x.password)<8: raise HTTPException(400,"Password must be at least 8 characters")
-if len(x.password.encode("utf-8"))>72: raise HTTPException(400,"Password must be 72 bytes or less")   
+    if len(x.password)<8: raise HTTPException(400,"Password must be at least 8 characters")
+    if len(x.password.encode("utf-8"))>72: raise HTTPException(400,"Password must be 72 bytes or less")
     if x.role not in ("partner","owner"): raise HTTPException(400,"Invalid role")
     c=db()
     try:
         cur=c.execute("INSERT INTO users(name,email,password,city,skills,investment,interests,role,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
-          (x.name,x.email,pwd.hash(x.password),x.city,x.skills,x.investment,x.interests,x.role,datetime.utcnow().isoformat()))
+            (x.name,x.email,pwd.hash(x.password),x.city,x.skills,x.investment,x.interests,x.role,datetime.utcnow().isoformat()))
         c.commit(); uid=cur.lastrowid
-    except sqlite3.IntegrityError: raise HTTPException(409,"Email already registered")
-    finally: c.close()
+    except sqlite3.IntegrityError:
+        raise HTTPException(409,"Email already registered")
+    finally:
+        c.close()
     return {"token":token(uid),"user_id":uid}
-
 @app.post("/api/login")
 def login(x:Login):
     c=db(); u=c.execute("SELECT * FROM users WHERE email=? AND blocked=0",(x.email,)).fetchone(); c.close()
