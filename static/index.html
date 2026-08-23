@@ -2,388 +2,690 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width">
-<title>PartnerHub</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PartnerHub India</title>
+
 <style>
-body{font-family:Arial;margin:0;background:#f4f6fa;color:#172033}
-.wrap{max-width:900px;margin:auto;background:white;min-height:100vh;padding:24px}
-.top{display:flex;justify-content:space-between;align-items:center}
-.brand{font-size:28px;font-weight:800}
-.tabs button,.btn{padding:10px 14px;border:0;border-radius:9px;margin:4px;background:#172033;color:white}
-.card{padding:18px;border:1px solid #e3e6ed;border-radius:14px;margin:12px 0}
-input,textarea,select{width:100%;padding:11px;margin:6px 0 12px;border:1px solid #ccd3df;border-radius:8px;box-sizing:border-box}
-.muted{color:#667085}
-.score{font-size:20px;font-weight:bold}
-.hide{display:none}
-.link{background:none;border:0;color:#172033;text-decoration:underline;padding:8px;cursor:pointer}
+*{box-sizing:border-box}
+body{
+  font-family:Arial,sans-serif;
+  margin:0;
+  background:#f4f6fa;
+  color:#172033;
+}
+.wrap{
+  max-width:900px;
+  margin:auto;
+  background:white;
+  min-height:100vh;
+  padding:24px;
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+}
+.brand{
+  font-size:30px;
+  font-weight:800;
+}
+.tag{
+  color:#667085;
+  font-size:17px;
+  margin-top:4px;
+}
+.tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:20px 0;
+}
+button,.btn{
+  padding:12px 16px;
+  border:0;
+  border-radius:10px;
+  background:#172033;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+button:hover,.btn:hover{
+  opacity:.9;
+}
+.card{
+  padding:18px;
+  border:1px solid #e3e6ed;
+  border-radius:14px;
+  margin:12px 0;
+  background:#fff;
+}
+input,textarea,select{
+  width:100%;
+  padding:12px;
+  margin:6px 0 12px;
+  border:1px solid #ccd3df;
+  border-radius:9px;
+  font-size:16px;
+}
+textarea{
+  min-height:100px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+}
+.muted{
+  color:#667085;
+}
+.score{
+  font-size:20px;
+  font-weight:bold;
+}
+.hide{
+  display:none!important;
+}
+.error{
+  color:#c62828;
+  margin-top:10px;
+}
+.success{
+  color:#16803c;
+  margin-top:10px;
+}
+.lang{
+  width:auto;
+  padding:9px;
+  margin:0;
+}
+h2{
+  margin-top:8px;
+}
 </style>
 </head>
 
 <body>
+
 <div class="wrap">
 
-<div class="top">
-<div>
-<div class="brand">PartnerHub</div>
-<div class="muted">Find the Right Partner. Build Together.</div>
+  <div class="top">
+
+    <div>
+      <div class="brand">PartnerHub India</div>
+      <div class="tag" id="tagline">
+        Find the Right Partner. Build Together.
+      </div>
+    </div>
+
+    <div>
+      <select id="language" class="lang" onchange="changeLanguage()">
+        <option value="en">English</option>
+        <option value="hi">हिंदी</option>
+        <option value="pa">ਪੰਜਾਬੀ</option>
+      </select>
+
+      <button class="btn" onclick="logout()" id="logoutBtn">
+        Logout
+      </button>
+    </div>
+
+  </div>
+
+
+  <!-- LOGIN / REGISTER -->
+
+  <div id="auth" class="card">
+
+    <h2 id="authTitle">Login / Register</h2>
+
+    <input
+      id="name"
+      placeholder="Name"
+    >
+
+    <input
+      id="email"
+      type="email"
+      placeholder="Email"
+    >
+
+    <input
+      id="pass"
+      type="password"
+      placeholder="Password (8+ characters)"
+    >
+
+    <select id="role">
+      <option value="partner">Partner / Investor</option>
+      <option value="owner">Business Owner</option>
+    </select>
+
+    <input
+      id="city"
+      placeholder="City"
+    >
+
+    <input
+      id="skills"
+      placeholder="Skills, comma separated"
+    >
+
+    <input
+      id="investment"
+      type="number"
+      placeholder="Investment capacity ₹"
+    >
+
+    <input
+      id="interests"
+      placeholder="Business interests, comma separated"
+    >
+
+    <div>
+      <button class="btn" onclick="register()" id="registerBtn">
+        Create Account
+      </button>
+
+      <button class="btn" onclick="login()" id="loginBtn">
+        Login
+      </button>
+    </div>
+
+    <p id="msg"></p>
+
+  </div>
+
+
+  <!-- APP -->
+
+  <div id="app" class="hide">
+
+    <div class="tabs">
+
+      <button onclick="loadBusinesses()">
+        Find Business
+      </button>
+
+      <button onclick="showPost()">
+        Post Business
+      </button>
+
+      <button onclick="loadMatches()">
+        My Matches
+      </button>
+
+      <button onclick="loadNotifs()">
+        Notifications
+      </button>
+
+      <button onclick="profile()">
+        Profile
+      </button>
+
+    </div>
+
+    <div id="content"></div>
+
+  </div>
+
 </div>
-<button class="btn" onclick="logout()">Logout</button>
-</div>
 
-<!-- LOGIN -->
-<div id="loginBox" class="card">
-<h2>Login</h2>
-
-<input id="loginEmail" type="email" placeholder="Email">
-<input id="loginPass" type="password" placeholder="Password">
-
-<button class="btn" onclick="login()">Login</button>
-
-<p id="loginMsg"></p>
-
-<button class="link" onclick="showRegister()">
-Create a new account
-</button>
-</div>
-
-<!-- REGISTER -->
-<div id="registerBox" class="card hide">
-<h2>Create Account</h2>
-
-<input id="regName" placeholder="Name">
-<input id="regEmail" type="email" placeholder="Email">
-<input id="regPass" type="password" placeholder="Password (8+ chars)">
-
-<select id="regRole">
-<option value="partner">Partner / Investor</option>
-<option value="owner">Business Owner</option>
-</select>
-
-<input id="regCity" placeholder="City">
-<input id="regSkills" placeholder="Skills, comma separated">
-<input id="regInvestment" type="number" placeholder="Investment capacity ₹">
-<input id="regInterests" placeholder="Business interests, comma separated">
-
-<button class="btn" onclick="register()">Create Account</button>
-
-<p id="regMsg"></p>
-
-<button class="link" onclick="showLogin()">
-Already have an account? Login
-</button>
-</div>
-
-<!-- APP -->
-<div id="app" class="hide">
-
-<div class="tabs">
-<button onclick="loadBusinesses()">Find Business</button>
-<button onclick="showPost()">Post Business</button>
-<button onclick="loadMatches()">My Matches</button>
-<button onclick="loadNotifs()">Notifications</button>
-<button onclick="profile()">Profile</button>
-</div>
-
-<div id="content"></div>
-
-</div>
-
-</div>
 
 <script>
 
-let T=localStorage.getItem('ph_token');
+/* =========================
+   TOKEN
+========================= */
 
-const loginBox=document.getElementById('loginBox');
-const registerBox=document.getElementById('registerBox');
-const app=document.getElementById('app');
+let T = localStorage.getItem("ph_token");
 
-if(T){
-loginBox.classList.add('hide');
-registerBox.classList.add('hide');
-app.classList.remove('hide');
-loadBusinesses();
-}
 
-const api=async(u,o={})=>{
+/* =========================
+   API
+   IMPORTANT:
+   API IS CREATED BEFORE
+   loadBusinesses()
+========================= */
 
-o.headers={
-...(o.headers||{}),
-'Content-Type':'application/json',
-...(T?{Authorization:'Bearer '+T}:{})
+const api = async (url, options = {}) => {
+
+  options.headers = {
+    ...(options.headers || {}),
+    "Content-Type": "application/json"
+  };
+
+  if (T) {
+    options.headers.Authorization = "Bearer " + T;
+  }
+
+  let response;
+
+  try {
+    response = await fetch(url, options);
+  } catch (error) {
+    throw new Error("Server connection failed");
+  }
+
+  let data;
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new Error("Invalid server response");
+  }
+
+  if (!response.ok) {
+
+    if (typeof data.detail === "string") {
+      throw new Error(data.detail);
+    }
+
+    throw new Error(
+      JSON.stringify(data.detail || data)
+    );
+  }
+
+  return data;
 };
 
-let r=await fetch(u,o);
-let d=await r.json();
 
-if(!r.ok){
+/* =========================
+   START APP
+========================= */
 
-throw Error(
-typeof d.detail==='string'
-?d.detail
-:JSON.stringify(d.detail||d)
-);
+if (T) {
+
+  document.getElementById("auth")
+    .classList.add("hide");
+
+  document.getElementById("app")
+    .classList.remove("hide");
+
+  loadBusinesses()
+    .catch(function(error){
+
+      if (
+        error.message.includes("expired") ||
+        error.message.includes("Invalid") ||
+        error.message.includes("Login required")
+      ) {
+        localStorage.removeItem("ph_token");
+        T = null;
+
+        document.getElementById("auth")
+          .classList.remove("hide");
+
+        document.getElementById("app")
+          .classList.add("hide");
+
+        showMessage("Please login again.", true);
+      }
+      else {
+        showMessage(error.message, true);
+      }
+
+    });
+
+}
+else {
+
+  document.getElementById("auth")
+    .classList.remove("hide");
+
+  document.getElementById("app")
+    .classList.add("hide");
 
 }
 
-return d;
-};
 
-function showRegister(){
+/* =========================
+   MESSAGE
+========================= */
 
-loginBox.classList.add('hide');
-registerBox.classList.remove('hide');
+function showMessage(text, error = false){
 
+  const msg = document.getElementById("msg");
+
+  msg.textContent = text;
+
+  msg.className = error
+    ? "error"
+    : "success";
 }
 
-function showLogin(){
 
-registerBox.classList.add('hide');
-loginBox.classList.remove('hide');
-
-}
-
-async function login(){
-
-let email=document.getElementById('loginEmail').value.trim();
-let password=document.getElementById('loginPass').value;
-
-if(!email){
-document.getElementById('loginMsg').textContent='Please enter your email.';
-return;
-}
-
-if(!password){
-document.getElementById('loginMsg').textContent='Please enter your password.';
-return;
-}
-
-try{
-
-let d=await api('/api/login',{
-method:'POST',
-body:JSON.stringify({
-email:email,
-password:password
-})
-});
-
-T=d.token;
-localStorage.setItem('ph_token',T);
-
-location.reload();
-
-}catch(e){
-
-document.getElementById('loginMsg').textContent=e.message;
-
-}
-
-}
+/* =========================
+   REGISTER
+========================= */
 
 async function register(){
 
-let name=document.getElementById('regName').value.trim();
-let email=document.getElementById('regEmail').value.trim();
-let password=document.getElementById('regPass').value;
-let role=document.getElementById('regRole').value;
-let city=document.getElementById('regCity').value.trim();
-let skills=document.getElementById('regSkills').value.trim();
-let investment=Number(document.getElementById('regInvestment').value)||0;
-let interests=document.getElementById('regInterests').value.trim();
+  try {
 
-if(!name||!email||!password){
-document.getElementById('regMsg').textContent='Name, email and password are required.';
-return;
+    const email =
+      document.getElementById("email").value.trim();
+
+    const password =
+      document.getElementById("pass").value;
+
+    const name =
+      document.getElementById("name").value.trim();
+
+    if (!name) {
+      showMessage("Please enter your name.", true);
+      return;
+    }
+
+    if (!email || !email.includes("@")) {
+      showMessage("Please enter a valid email.", true);
+      return;
+    }
+
+    if (password.length < 8) {
+      showMessage(
+        "Password must be at least 8 characters.",
+        true
+      );
+      return;
+    }
+
+    const data = await api(
+      "/api/register",
+      {
+        method:"POST",
+
+        body:JSON.stringify({
+
+          name:name,
+
+          email:email,
+
+          password:password,
+
+          role:
+            document.getElementById("role").value,
+
+          city:
+            document.getElementById("city").value,
+
+          skills:
+            document.getElementById("skills").value,
+
+          investment:
+            Number(
+              document.getElementById("investment").value
+            ) || 0,
+
+          interests:
+            document.getElementById("interests").value
+
+        })
+      }
+    );
+
+    T = data.token;
+
+    localStorage.setItem(
+      "ph_token",
+      T
+    );
+
+    location.reload();
+
+  }
+  catch(error){
+
+    showMessage(
+      error.message,
+      true
+    );
+
+  }
+
 }
 
-try{
 
-let d=await api('/api/register',{
-method:'POST',
-body:JSON.stringify({
-name:name,
-email:email,
-password:password,
-role:role,
-city:city,
-skills:skills,
-investment:investment,
-interests:interests
-})
-});
+/* =========================
+   LOGIN
+========================= */
 
-T=d.token;
-localStorage.setItem('ph_token',T);
+async function login(){
 
-location.reload();
+  try {
 
-}catch(e){
+    const email =
+      document.getElementById("email").value.trim();
 
-document.getElementById('regMsg').textContent=e.message;
+    const password =
+      document.getElementById("pass").value;
+
+    if (!email || !email.includes("@")) {
+
+      showMessage(
+        "Please enter a valid email.",
+        true
+      );
+
+      return;
+    }
+
+    if (!password) {
+
+      showMessage(
+        "Please enter your password.",
+        true
+      );
+
+      return;
+    }
+
+    const data = await api(
+      "/api/login",
+      {
+        method:"POST",
+
+        body:JSON.stringify({
+
+          email:email,
+
+          password:password
+
+        })
+      }
+    );
+
+    T = data.token;
+
+    localStorage.setItem(
+      "ph_token",
+      T
+    );
+
+    location.reload();
+
+  }
+  catch(error){
+
+    showMessage(
+      error.message,
+      true
+    );
+
+  }
 
 }
 
-}
+
+/* =========================
+   LOGOUT
+========================= */
 
 function logout(){
 
-localStorage.removeItem('ph_token');
-T=null;
+  localStorage.removeItem(
+    "ph_token"
+  );
 
-app.classList.add('hide');
-registerBox.classList.add('hide');
-loginBox.classList.remove('hide');
+  T = null;
+
+  location.reload();
 
 }
+
+
+/* =========================
+   FIND BUSINESS
+========================= */
 
 async function loadBusinesses(){
 
-try{
+  const content =
+    document.getElementById("content");
 
-let d=await api('/api/businesses');
+  try {
 
-content.innerHTML=
-'<h2>Business Opportunities</h2>'+
-(d.map(b=>`
-<div class="card">
-<h3>${b.name}</h3>
-<p>${b.description||''}</p>
-<span class="muted">
-${b.category} • ${b.city} • Partner investment ₹${b.partner_investment}
-</span>
-<p class="score">${b.match_score}% Match</p>
-<button class="btn" onclick="interest(${b.id})">I'm Interested</button>
-</div>
-`).join('')||'<p>No listings yet.</p>');
+    const businesses =
+      await api("/api/businesses");
 
-}catch(e){
+    if (!businesses.length) {
 
-content.innerHTML='<p>'+e.message+'</p>';
+      content.innerHTML = `
+        <div class="card">
+          <h2>Business Opportunities</h2>
+          <p class="muted">
+            No business listings yet.
+          </p>
+        </div>
+      `;
+
+      return;
+    }
+
+    content.innerHTML = `
+      <h2>Business Opportunities</h2>
+
+      <div class="grid">
+
+        ${businesses.map(function(b){
+
+          return `
+
+            <div class="card">
+
+              <h3>${escapeHTML(b.name)}</h3>
+
+              <p>
+                ${escapeHTML(
+                  b.description || ""
+                )}
+              </p>
+
+              <p class="muted">
+                ${escapeHTML(
+                  b.category || "Other"
+                )}
+                •
+                ${escapeHTML(
+                  b.city || "India"
+                )}
+              </p>
+
+              <p>
+                Partner Investment:
+                ₹${Number(
+                  b.partner_investment || 0
+                ).toLocaleString("en-IN")}
+              </p>
+
+              <p>
+                Partnership:
+                ${b.partnership_pct || 0}%
+              </p>
+
+              <p>
+                Profit Share:
+                ${b.profit_share || 0}%
+              </p>
+
+              <p class="score">
+                ${b.match_score || 0}% Match
+              </p>
+
+              <button
+                class="btn"
+                onclick="interest(${b.id})"
+              >
+                I'm Interested
+              </button>
+
+            </div>
+
+          `;
+
+        }).join("")}
+
+      </div>
+    `;
+
+  }
+  catch(error){
+
+    content.innerHTML = `
+      <div class="card error">
+        ${escapeHTML(error.message)}
+      </div>
+    `;
+
+  }
 
 }
 
-}
+
+/* =========================
+   INTEREST
+========================= */
 
 async function interest(id){
 
-try{
+  try {
 
-await api('/api/interests',{
-method:'POST',
-body:JSON.stringify({business_id:id})
-});
+    await api(
+      "/api/interests",
+      {
+        method:"POST",
 
-alert('Interest sent!');
-loadBusinesses();
+        body:JSON.stringify({
+          business_id:id
+        })
+      }
+    );
 
-}catch(e){
+    alert("Interest sent successfully!");
 
-alert(e.message);
+    loadBusinesses();
+
+  }
+  catch(error){
+
+    alert(error.message);
+
+  }
 
 }
 
-}
+
+/* =========================
+   POST BUSINESS
+========================= */
 
 function showPost(){
 
-content.innerHTML=`
-<h2>Post Business</h2>
+  document.getElementById("content").innerHTML = `
 
-<input id="bn" placeholder="Business name">
-<input id="bc" placeholder="Category">
-<input id="bl" placeholder="City">
-<input id="ir" type="number" placeholder="Total investment required">
-<input id="pi" type="number" placeholder="Partner investment">
-<input id="pp" type="number" placeholder="Partnership %">
-<input id="ps" type="number" placeholder="Profit share %">
-<textarea id="bd" placeholder="Description"></textarea>
+    <div class="card">
 
-<button class="btn" onclick="postBiz()">Publish</button>
-`;
+      <h2>Post Business</h2>
 
-}
-
-async function postBiz(){
-
-try{
-
-await api('/api/businesses',{
-method:'POST',
-body:JSON.stringify({
-name:document.getElementById('bn').value,
-category:document.getElementById('bc').value,
-city:document.getElementById('bl').value,
-investment_required:Number(document.getElementById('ir').value)||0,
-partner_investment:Number(document.getElementById('pi').value)||0,
-partnership_pct:Number(document.getElementById('pp').value)||0,
-profit_share:Number(document.getElementById('ps').value)||0,
-description:document.getElementById('bd').value
-})
-});
-
-alert('Published');
-loadBusinesses();
-
-}catch(e){
-
-alert(e.message);
-
-}
-
-}
-
-async function loadMatches(){
-
-let d=await api('/api/matches');
-
-content.innerHTML=
-'<h2>My Matches</h2>'+
-(d.map(x=>`
-<div class="card">
-<b>${x.name}</b>
-<p>${x.category} • ${x.city}</p>
-<span>Status: ${x.status}</span>
-</div>
-`).join('')||'<p>No matches yet.</p>');
-
-}
-
-async function loadNotifs(){
-
-let d=await api('/api/notifications');
-
-content.innerHTML=
-'<h2>Notifications</h2>'+
-(d.map(x=>`
-<div class="card">
-${x.text}
-<div class="muted">${x.created_at}</div>
-</div>
-`).join('')||'<p>No notifications yet.</p>');
-
-}
-
-async function profile(){
-
-let u=await api('/api/me');
-
-content.innerHTML=`
-<h2>My Profile</h2>
-
-<div class="card">
-<b>${u.name}</b>
-<p>${u.city||''}</p>
-<p>Skills: ${u.skills||'—'}</p>
-<p>Investment: ₹${u.investment||0}</p>
-<p>Interests: ${u.interests||'—'}</p>
-<p>Verification: ${u.verified?'Verified':'Pending'}</p>
-</div>
-`;
-
-}
-
-</script>
-
-</body>
-</html>
+      <input
+       
